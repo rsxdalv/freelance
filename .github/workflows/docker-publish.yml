@@ -37,9 +37,10 @@ jobs:
       # - uses: shivammathur/setup-php@15c43e89cdef867065b0213be354c2841860869e
       #   with:
       #     php-version: '8.2.1'
-      - uses: actions/checkout@v3
-      - name: Build the Docker image
-        run: docker build . --file Dockerfile.for-fix --tag sail-8.2-app
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       # - name: Copy .env
       #   run: php -r "file_exists('.env') || copy('.env.example', '.env');"
       # - name: Install Dependencies
@@ -60,9 +61,6 @@ jobs:
       # - name: sail build
       #   run: vendor/bin/sail build
         
-      # - name: Checkout repository
-      #   uses: actions/checkout@v3
-
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer
       - name: Install cosign
@@ -94,29 +92,37 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      # Build and push Docker image with Buildx (don't push on PR)
-      # https://github.com/docker/build-push-action
-      - name: Build and push Docker image
-        id: build-and-push
-        uses: docker/build-push-action@ac9327eae2b366085ac7f6a2d02df8aa8ead720a
-        with:
-          context: .
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile.for-fix --tag test-aqua
+      - name: Tag the Docker image for GitHub
+        # run: docker tag test-aqua ghcr.io/rsxdalv/freelance/test-aqua
+        run: docker tag test-aqua ${{ steps.meta.outputs.tags }}
+      - name: Push Docker image to GitHub
+        run: docker push ${{ steps.meta.outputs.tags }}
+
+      # # Build and push Docker image with Buildx (don't push on PR)
+      # # https://github.com/docker/build-push-action
+      # - name: Build and push Docker image
+      #   id: build-and-push
+      #   uses: docker/build-push-action@ac9327eae2b366085ac7f6a2d02df8aa8ead720a
+      #   with:
+      #     context: .
+      #     push: ${{ github.event_name != 'pull_request' }}
+      #     tags: ${{ steps.meta.outputs.tags }}
+      #     labels: ${{ steps.meta.outputs.labels }}
+      #     cache-from: type=gha
+      #     cache-to: type=gha,mode=max
 
 
-      # Sign the resulting Docker image digest except on PRs.
-      # This will only write to the public Rekor transparency log when the Docker
-      # repository is public to avoid leaking data.  If you would like to publish
-      # transparency data even for private images, pass --force to cosign below.
-      # https://github.com/sigstore/cosign
-      - name: Sign the published Docker image
-        if: ${{ github.event_name != 'pull_request' }}
-        env:
-          COSIGN_EXPERIMENTAL: "true"
-        # This step uses the identity token to provision an ephemeral certificate
-        # against the sigstore community Fulcio instance.
-        run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
+      # # Sign the resulting Docker image digest except on PRs.
+      # # This will only write to the public Rekor transparency log when the Docker
+      # # repository is public to avoid leaking data.  If you would like to publish
+      # # transparency data even for private images, pass --force to cosign below.
+      # # https://github.com/sigstore/cosign
+      # - name: Sign the published Docker image
+      #   if: ${{ github.event_name != 'pull_request' }}
+      #   env:
+      #     COSIGN_EXPERIMENTAL: "true"
+      #   # This step uses the identity token to provision an ephemeral certificate
+      #   # against the sigstore community Fulcio instance.
+      #   run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
