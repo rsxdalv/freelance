@@ -33,3 +33,9 @@ jobs:
         DB_CONNECTION: sqlite
         DB_DATABASE: database/database.sqlite
       run: vendor/bin/phpunit
+    - name: test sail
+      run: vendor/bin/sail composer --version
+    - name: test sail php
+      run: vendor/bin/sail php --version
+    - name: test sail docker
+      run: vendor/bin/sail --version
