@@ -1,3 +1,3 @@
-FROM sail-8.2-app:latest
+FROM sail-8.2-app
 
 COPY . /var/www/html
