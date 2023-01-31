@@ -81,8 +81,6 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Build the Docker image
-        run: docker build . --tag sail-8.2/app
       - name: Tag the Docker image for GitHub
         run: docker tag sail-8.2/app ${{ steps.meta.outputs.tags }}
       - name: Push Docker image to GitHub
